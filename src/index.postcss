@@ -1,0 +1,51 @@
+*,
+::before,
+::after
+{
+	content: none ;
+	margin: 0 ;
+	padding: 0 ;
+	font: inherit ;
+	color: inherit ;
+}
+
+html,
+body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+main {
+	width: 100%;
+	height: 100%;
+	position: relative;
+	overflow: hidden;
+	background-color: rgb(245, 247, 250);
+}
+
+.card {
+	width: 300px;
+	height: 500px;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	border-radius: 1%;
+	box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.1);
+	background-image: var(--image) ;
+	background-color: white;
+	transform: translateX(var(--x, -50%)) translateY(var(--y, -50%)) rotate(var(--rotate, 0deg)) rotateY(var(--rotate-y, 0deg)) scale(var(--scale, 1));
+
+	&::after
+	{
+		content: attr(title);
+		position: absolute;
+		bottom: 0;
+		text-align: center;
+		left: 0;
+		right: 0;
+		padding: 1rem;
+		background: #fffc;
+	}
+}
