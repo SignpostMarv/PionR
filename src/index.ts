@@ -18,6 +18,7 @@ class Carousel {
 	isDraggingFrom:0|-1|1 = 0;
 	last_random:number = 0;
 	pan_debounce:number|undefined;
+	tap_debounce:number|undefined;
 
 	constructor(element:HTMLElement) {
 
@@ -69,7 +70,10 @@ class Carousel {
 
 			// pass events data to custom callbacks
 			this.hammer.on('tap', (e) => {
-				this.onTap(e)
+				cancelAnimationFrame(this.tap_debounce);
+				this.tap_debounce = requestAnimationFrame(() => {
+					this.onTap(e);
+				});
 			})
 			this.hammer.on('pan', (e) => {
 				cancelAnimationFrame(this.pan_debounce);
