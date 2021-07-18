@@ -19,10 +19,16 @@ class Carousel {
 	last_random:number = 0;
 	pan_debounce:number|undefined;
 	tap_debounce:number|undefined;
+	profile:HTMLDialogElement;
+	profiles:{
+		pioneer: string[][],
+		catte: string[][],
+	}|undefined;
 
-	constructor(element:HTMLElement) {
+	constructor(element:HTMLElement, profile:HTMLDialogElement) {
 
-		this.board = element
+		this.board = element;
+		this.profile = profile;
 
 		// add first two cards programmatically
 		this.push()
@@ -62,19 +68,11 @@ class Carousel {
 
 			// listen for tap and pan gestures on top card
 			this.hammer = new Hammer(this.topCard)
-			this.hammer.add(new Hammer.Tap())
 			this.hammer.add(new Hammer.Pan({
 				position: Hammer.position_ALL,
 				threshold: 0
 			}))
 
-			// pass events data to custom callbacks
-			this.hammer.on('tap', (e) => {
-				cancelAnimationFrame(this.tap_debounce);
-				this.tap_debounce = requestAnimationFrame(() => {
-					this.onTap(e);
-				});
-			})
 			this.hammer.on('pan', (e) => {
 				cancelAnimationFrame(this.pan_debounce);
 				this.pan_debounce = requestAnimationFrame(() => {
@@ -84,40 +82,6 @@ class Carousel {
 
 		}
 
-	}
-
-	onTap(e) {
-
-		// get finger position on top card
-		let propX = (e.center.x - e.target.getBoundingClientRect().left) / e.target.clientWidth
-
-		// get rotation degrees around Y axis (+/- 15) based on finger position
-		let rotateY = 15 * (propX < 0.05 ? -1 : 1)
-
-		// enable transform transition
-		this.topCard.style.transition = 'transform 100ms ease-out';
-
-		[
-			'--x',
-			'--y',
-			'--rotate',
-			'--scale',
-		].forEach((e) => {
-			this.topCard.style.removeProperty(e);
-		});
-		this.topCard.style.setProperty('--rotate-y', `${rotateY}deg`);
-
-		this.topCard.addEventListener('transitionend', () => {
-			[
-				'--x',
-				'--y',
-				'--rotate',
-				'--rotate-y',
-				'--scale',
-			].forEach((e) => {
-				this.topCard.style.removeProperty(e);
-			});
-		});
 	}
 
 	onPan(e) {
@@ -167,6 +131,8 @@ class Carousel {
 		this.topCard.style.setProperty('--rotate', `${deg}deg`);
 		this.topCard.style.removeProperty('--rotate-y');
 		this.topCard.style.removeProperty('--scale');
+
+		console.log(e);
 
 		// scale up next card
 		if (this.nextCard) {
@@ -281,16 +247,62 @@ class Carousel {
 			[c[15], c[16], c[17]].join(''),
 		].join('.');
 
-		card.title = `${3 == random ? 'Catte' : 'Employee'} ${d}b`;
+		const name = `${3 == random ? 'Catte' : 'Employee'} ${d}b`;
 
-		card.style.setProperty(
-			'--image',
-			`url('${(images[random] as HTMLLinkElement).href}')`
-		);
+		card.innerHTML = `
+			<header>
+				<h1>${name}</h1>
+				<button type="button" data-action="nope">❌</button>
+				<button type="button" data-action="yup">💓</button>
+				<button
+					type="button"
+					data-action="profile"
+					data-seed="${d}"
+					data-catte="${3 === random ? 'true' : 'false'}"
+				>ℹ️</button>
+			</header>
+			<img width="300" height="500" src="${
+				(images[random] as HTMLLinkElement).href
+			}" alt="Profile photo">
+		`;
+
+		const div = document.createElement('div');
 
 		this.board.insertBefore(card, this.board.firstChild);
 	}
 
+	async generate_profile_text(seed:string, is_catte:boolean) : Promise<HTMLElement>
+	{
+		if ( undefined === this.profiles) {
+			this.profiles = await (await fetch('./profiles.json')).json();
+		}
+
+		const fragment = document.createDocumentFragment();
+
+		const source = this.profiles[is_catte ? 'catte' : 'pioneer'];
+
+		const profile = source[Math.floor(Math.random() * source.length)];
+
+		profile.forEach((e, i) => {
+			if (i > 0) {
+				fragment.appendChild(document.createElement('br'));
+			}
+
+			fragment.appendChild(document.createTextNode(e));
+		});
+
+		const wrapped = document.createElement('section');
+		const header_title = document.createElement('h1');
+
+		header_title.textContent = `${
+			(is_catte ? 'Catte' : 'Employee')
+		} ${seed}b`;
+		wrapped.appendChild(header_title);
+
+		wrapped.appendChild(fragment);
+
+		return wrapped;
+	}
 }
 
 export default Carousel;

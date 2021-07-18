@@ -11,6 +11,7 @@
 <link rel="preload" as="image" href="./img/image2.webp">
 <link rel="preload" as="image" href="./img/image3.webp">
 <link rel="preload" as="image" href="./img/image4.webp">
+<link rel="preload" as="fetch" href="./profiles.json">
 </head>
 <body>
 <header>
@@ -29,13 +30,60 @@
 	<img src="./img/logo.svg" alt="PionR" width="90.75" height="40">
 </header>
 <main></main>
+<dialog></dialog>
 <script src="./hammer.min.js"></script>
 <script type="module">
 import Carousel from './index.js';
 
 const board = document.querySelector('main');
+const profile = document.querySelector('dialog');
 
-const carousel = new Carousel(board);
+const carousel = new Carousel(board, profile);
+
+board.addEventListener(
+	'click',
+	async (e) => {
+		if (e.target.dataset.action === 'profile') {
+			const profile_fragment = await carousel.generate_profile_text(
+				e.target.dataset.seed,
+				'true' === e.target.dataset.catte
+			);
+
+			profile.textContent = '';
+			profile.appendChild(profile_fragment);
+
+			profile.open = true;
+		} else if (e.target.dataset.action === 'nope') {
+			carousel.onPan({
+				deltaX: board.clientWidth / -2,
+				deltaY: -50,
+				y: 0,
+				center: {y: 400},
+				isFinal: true,
+				direction: Hammer.DIRECTION_LEFT,
+			});
+		} else if (e.target.dataset.action === 'yup') {
+			carousel.onPan({
+				deltaX: board.clientWidth / 2,
+				deltaY: -50,
+				y: 0,
+				center: {y: 400},
+				isFinal: true,
+				direction: Hammer.DIRECTION_RIGHT,
+			});
+		}
+	},
+	{
+		passive: true,
+	}
+);
+profile.addEventListener('click', (e) => {
+	if (e.target === profile) {
+		profile.open = false;
+	}
+});
+
+window.carousel = carousel;
 </script>
 </body>
 </html>
