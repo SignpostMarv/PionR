@@ -53,8 +53,10 @@ main {
 }
 
 .card {
-	width: 300px;
-	height: 500px;
+	width: 48vmax ;
+	height: 80vmax ;
+	max-width: 300px ;
+	max-height: 500px ;
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -67,6 +69,9 @@ main {
 	img
 	{
 		pointer-events: none ;
+		display: block ;
+		width: 100% ;
+		height: auto ;
 	}
 
 	header
@@ -142,7 +147,7 @@ dialog
 
 		h1
 		{
-			font-size: 1.5rem ;
+			font-size: 1.2rem ;
 			font-weight: bolder ;
 			font-variant: small-caps ;
 			margin-bottom: 1rem ;
