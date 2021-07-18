@@ -132,8 +132,6 @@ class Carousel {
 		this.topCard.style.removeProperty('--rotate-y');
 		this.topCard.style.removeProperty('--scale');
 
-		console.log(e);
-
 		// scale up next card
 		if (this.nextCard) {
 			[
