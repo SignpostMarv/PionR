@@ -2,6 +2,46 @@ const images = document.querySelectorAll(
 	'head > link[rel="preload"][as="image"]'
 );
 
+declare type images = {
+	[key:'pioneer'|'catte'|string]: {
+		any?: string[],
+		0?:string[]
+	}
+};
+
+class SemiRandomInt
+{
+	max:number;
+	last:number = -1;
+
+	constructor(max:number)
+	{
+		this.max = max;
+	}
+
+	fresh() : number
+	{
+		if (this.max === 1) {
+			return 0;
+		}
+
+		let random = this.last;
+		let loops = 0;
+
+		do {
+			random = Math.floor(Math.random() * (this.max * 2)) % this.max;
+
+			if (++loops > 10) {
+				throw new Error('fail');
+			}
+		} while (random === this.last);
+
+		this.last = random;
+
+		return random;
+	}
+}
+
 /*
 LikeCarousel (c) 2019 Simone P.M. github.com/simonepm - Licensed MIT
 Modified 2021 SignpostMarv
@@ -16,7 +56,6 @@ class Carousel {
 	startPosX:number = 0;
 	startPosY:number = 0;
 	isDraggingFrom:0|-1|1 = 0;
-	last_random:number = 0;
 	pan_debounce:number|undefined;
 	tap_debounce:number|undefined;
 	profile:HTMLDialogElement;
@@ -24,19 +63,32 @@ class Carousel {
 		pioneer: string[][],
 		catte: string[][],
 	}|undefined;
+	images: images;
+	image_types: string[];
+	profile_types_randomiser:SemiRandomInt;
+	image_types_randomise: {[key:string]: SemiRandomInt} = {};
 
-	constructor(element:HTMLElement, profile:HTMLDialogElement) {
-
+	constructor(
+		element:HTMLElement,
+		profile:HTMLDialogElement,
+		images:images
+	) {
 		this.board = element;
 		this.profile = profile;
+		this.images = images;
+		this.image_types = Object.keys(images);
+		this.profile_types_randomiser = new SemiRandomInt(
+			this.image_types.length * 4
+		);
 
 		// add first two cards programmatically
-		this.push()
-		this.push()
-
+		Promise.all([
+			this.push(),
+			this.push(),
+		]).then(() => {
 		// handle gestures
 		this.handle()
-
+		});
 	}
 
 	handle() {
@@ -183,11 +235,11 @@ class Carousel {
 				this.topCard.style.removeProperty('--rotate-y');
 				this.topCard.style.removeProperty('--scale');
 
-				this.topCard.addEventListener('transitionend', () => {
+				this.topCard.addEventListener('transitionend', async () => {
 					// remove swiped card
 					this.board.removeChild(this.topCard);
 					// add new card
-					this.push();
+					await this.push();
 					// handle gestures on new top card
 					this.handle();
 				});
@@ -221,18 +273,13 @@ class Carousel {
 
 	}
 
-	push() {
+	async push() {
 
 		let card = document.createElement('div')
 
 		card.classList.add('card');
 
-		let random = this.last_random;
-
-		do {
-			random = Math.floor(Math.random() * (images.length * 2)) % images.length;
-		} while (random === this.last_random);
-		this.last_random = random;
+		const random = this.profile_types_randomiser.fresh() % this.image_types.length;
 		const a = Math.floor(Math.random() * Math.pow(16, 9)).toString(16).padStart(9, '0');
 		const b = Math.floor(Math.random() * Math.pow(16, 9)).toString(16).padStart(9, '0');
 		const c = a + b;
@@ -245,7 +292,25 @@ class Carousel {
 			[c[15], c[16], c[17]].join(''),
 		].join('.');
 
-		const name = `${3 == random ? 'Catte' : 'Employee'} ${d}b`;
+		const type = this.image_types[random];
+
+		const name = `${type.slice(0, 1).toUpperCase() + type.slice(1)} ${d}b`;
+
+		const images = [];
+
+		if ('any' in this.images[type]) {
+			if ( ! (type in this.image_types_randomise)) {
+				this.image_types_randomise[type] = new SemiRandomInt(
+					this.images[type].any.length
+				);
+			}
+
+			const random_image = this.image_types_randomise[type].fresh();
+
+			images.push(this.images[type].any[random_image]);
+		} else if (0 in this.images[type]) {
+			images.push(...this.images[type][0]);
+		}
 
 		card.innerHTML = `
 			<header>
@@ -256,20 +321,54 @@ class Carousel {
 					type="button"
 					data-action="profile"
 					data-seed="${d}"
-					data-catte="${3 === random ? 'true' : 'false'}"
+					data-catte="${'catte' === type ? 'true' : 'false'}"
 				>ℹ️</button>
 			</header>
-			<img width="300" height="500" src="${
-				(images[random] as HTMLLinkElement).href
-			}" alt="Profile photo">
+			<section data-show="0">
+				${images.map((url) => {
+					if (/\.webm/.test(url)) {
+						return `
+							<video
+								width="300"
+								height="500"
+								autoplay
+								muted
+								loop
+								src="${url}"
+							></video>
+						`;
+					}
+
+					return `<img width="300" height="500" src="${
+						url
+					}" alt="Profile photo">`;
+				}).join('')}
+				${
+					images.length > 1
+						? `
+							<button
+								data-action="back"
+								aria-label="Previous"
+							>◀</button><button
+								data-action="next"
+								aria-label="Next"
+							>▶</button>`
+						: ''
+				}
+			</section>
+			<section hidden></section>
 		`;
+
+		card.querySelector('section[hidden]').append(
+			(await this.generate_profile_text(d, type))
+		);
 
 		const div = document.createElement('div');
 
 		this.board.insertBefore(card, this.board.firstChild);
 	}
 
-	async generate_profile_text(seed:string, is_catte:boolean) : Promise<HTMLElement>
+	async generate_profile_text(seed:string, type:string) : Promise<HTMLElement>
 	{
 		if ( undefined === this.profiles) {
 			this.profiles = await (await fetch('./profiles.json')).json();
@@ -277,7 +376,11 @@ class Carousel {
 
 		const fragment = document.createDocumentFragment();
 
-		const source = this.profiles[is_catte ? 'catte' : 'pioneer'];
+		if ( ! (type in this.profiles)) {
+			throw new Error(`Profile type "${type}" not found in profiles!`);
+		}
+
+		const source = this.profiles[type];
 
 		const profile = source[Math.floor(Math.random() * source.length)];
 
@@ -293,7 +396,7 @@ class Carousel {
 		const header_title = document.createElement('h1');
 
 		header_title.textContent = `${
-			(is_catte ? 'Catte' : 'Employee')
+			type.slice(0, 1).toUpperCase() + type.slice(1)
 		} ${seed}b`;
 		wrapped.appendChild(header_title);
 

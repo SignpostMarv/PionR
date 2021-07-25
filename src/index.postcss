@@ -90,11 +90,49 @@ main {
 		font-variant: small-caps ;
 		text-align: left ;
 		height: auto ;
+		z-index: 1 ;
 
 		h1
 		{
 			width: 100% ;
 			margin-bottom: 1rem ;
+		}
+
+		+ section
+		{
+			width: 100%;
+			height: 100%;
+			white-space: nowrap;
+			display: flex;
+			scroll-snap-align: start;
+			overflow: hidden;
+			position: relative ;
+			z-index: 0 ;
+
+			> img,
+			> video
+			{
+				display: block ;
+				width: 100% ;
+				height: 100% ;
+			}
+
+			button
+			{
+				position: fixed ;
+				top: 50% ;
+				transform: translateY(-50%) ;
+			}
+
+			button[data-action="back"]
+			{
+				left: 1rem ;
+			}
+
+			button[data-action="next"]
+			{
+				right: 1rem ;
+			}
 		}
 
 		button
@@ -144,6 +182,7 @@ dialog
 		background: #fff ;
 		padding: 1rem ;
 		line-height: 1.5 ;
+		overflow: auto ;
 
 		h1
 		{

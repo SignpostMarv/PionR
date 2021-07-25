@@ -2,3 +2,8 @@
 /src/*.js
 /src/*.map
 /src/*.css
+/data/secret-images/
+/data/secret-profiles.json
+/src/images/
+/src/profiles.json
+/src/images.json

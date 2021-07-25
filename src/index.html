@@ -7,10 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="./index.css">
 <link rel="shortcut icon" href="./img/icon.ico">
-<link rel="preload" as="image" href="./img/image1.webp">
-<link rel="preload" as="image" href="./img/image2.webp">
-<link rel="preload" as="image" href="./img/image3.webp">
-<link rel="preload" as="image" href="./img/image4.webp">
+<link rel="preload" as="fetch" href="./images.json">
 <link rel="preload" as="fetch" href="./profiles.json">
 </head>
 <body>
@@ -38,19 +35,19 @@ import Carousel from './index.js';
 const board = document.querySelector('main');
 const profile = document.querySelector('dialog');
 
-const carousel = new Carousel(board, profile);
+fetch('./images.json').then(r => r.json()).then((images) => {
+	const carousel = new Carousel(board, profile, images);
 
 board.addEventListener(
 	'click',
 	async (e) => {
 		if (e.target.dataset.action === 'profile') {
-			const profile_fragment = await carousel.generate_profile_text(
-				e.target.dataset.seed,
-				'true' === e.target.dataset.catte
-			);
-
 			profile.textContent = '';
-			profile.appendChild(profile_fragment);
+			profile.innerHTML = (
+				e.target.parentNode.parentNode.querySelector(
+					'section[hidden]'
+				).innerHTML
+			);
 
 			profile.open = true;
 		} else if (e.target.dataset.action === 'nope') {
@@ -71,6 +68,33 @@ board.addEventListener(
 				isFinal: true,
 				direction: Hammer.DIRECTION_RIGHT,
 			});
+		} else if (e.target.dataset.action === 'next' || e.target.dataset.action === 'back') {
+			let show = parseInt(e.target.parentNode.dataset.show);
+
+			if ('next' === e.target.dataset.action) {
+				++show;
+			} else {
+				--show;
+			}
+
+			const nodes = e.target.parentNode.querySelectorAll('img,video');
+
+			if (show < 0) {
+				show = nodes.length + show - 1;
+			} else {
+				show = show % nodes.length;
+			}
+
+			e.target.parentNode.dataset.show = show.toString(10);
+
+			if ('VIDEO' === nodes[show].nodeName) {
+				nodes[show].play();
+			}
+
+			e.target.parentNode.scrollLeft = (
+				e.target.parentNode.clientWidth
+				* show
+			);
 		}
 	},
 	{
@@ -81,6 +105,7 @@ profile.addEventListener('click', (e) => {
 	if (e.target === profile) {
 		profile.open = false;
 	}
+});
 });
 </script>
 </body>
