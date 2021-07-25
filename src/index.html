@@ -80,7 +80,7 @@ board.addEventListener(
 			const nodes = e.target.parentNode.querySelectorAll('img,video');
 
 			if (show < 0) {
-				show = nodes.length + show - 1;
+				show = nodes.length -1;
 			} else {
 				show = show % nodes.length;
 			}
